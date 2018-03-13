@@ -14,9 +14,11 @@
         </form>
       </div>
       <div class="login" v-if="actionType === 'login'">
-        <div class="formRow">用户名<input type="text"></div>
-        <div class="formRow">密码<input type="password"></div>
-        <div class="formActions"><input type="submit" value="登录"></div>
+        <form v-on:submit.prevent=login>
+          <div class="formRow">用户名<input type="text" v-model="formData.userName"></div>
+          <div class="formRow">密码<input type="password" v-model="formData.password"></div>
+          <div class="formActions"><input type="submit" value="登录"></div>
+        </form>
       </div>
     </section>
     <section id="todo">
@@ -37,6 +39,15 @@
 </template>
 
 <script>
+  import AV from 'leancloud-storage'
+
+  let APP_ID = 'C8YAmtPqP1udTULP5RfRbRcR-gzGzoHsz'
+  let APP_KEY = 'PcW6DladugIs35VrRljo6im5'
+  AV.init({
+    appId: APP_ID,
+    appKey: APP_KEY,
+  })
+
   export default {
     data() {
       return {
@@ -48,7 +59,8 @@
         formData: {
           userName: '',
           password: ''
-        }
+        },
+        currentUser: ''
       }
     },
     created: function () {
@@ -81,6 +93,28 @@
       removeItem(item) {
         let index = this.items.indexOf(item)
         this.items.splice(index, 1)
+      },
+      signUp() {
+        // 新建 AVUser 对象实例
+        let user = new AV.User()
+        // 设置用户名
+        user.setUsername(this.formData.userName)
+        // 设置密码
+        user.setPassword(this.formData.password)
+        user.signUp().then((loginedUser) => {
+          this.currentUser = this.getCurrentUser()
+        }, function (error) {
+          alert('注册失败')
+        })
+      },
+      login() {
+        AV.User.logIn(this.formData.userName, this.formData.password).then(function (loginedUser) {
+          console.log(loginedUser)
+        }, function (error) {
+        })
+      },
+      getCurrentUser(){
+        
       }
     }
   }
