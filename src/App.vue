@@ -1,7 +1,7 @@
 <template xmlns:v-for="http://www.w3.org/1999/xhtml">
   <div id="app">
     <h1>{{title}}</h1>
-    <section id="logInAndSignUp">
+    <section id="logInAndSignUp" v-if="!currentUser">
       <div>
         <label><input type="radio" name="type" value="signUp" v-model="actionType">注册</label>
         <label><input type="radio" name="type" value="login" v-model="actionType">登录</label>
@@ -21,7 +21,10 @@
         </form>
       </div>
     </section>
-    <section id="todo">
+    <section id="todo" v-if="currentUser">
+      <div>
+        <button @click="logout">登出</button>
+      </div>
       <div class="newTask">
         <input type="text" v-model="newTodo" @keyup.enter="createNewList">
       </div>
@@ -64,12 +67,22 @@
       }
     },
     created: function () {
+      // 将数据储存至leanCloud
+
       window.onbeforeunload = () => {
+        // onbeforeunload,window api 在窗口关闭时执行
         let dataString = JSON.stringify(this.items)
         window.localStorage.setItem('todoList', dataString)
 
-        let newTodoString = JSON.stringify(this.newTodo)
-        window.localStorage.setItem('newTodo', newTodoString)
+        let AVTodos = AV.Object.extend('todos')
+        let avTodos = new AVTodos
+        avTodos.set('content', dataString)
+        avTodos.save().then(function (todo) {
+          // 保存成功后的代码
+          console.log('success')
+        }, function (error) {
+          console.log('fail')
+        })
       }
 
       let oldDataString = window.localStorage.getItem('todoList')
@@ -77,12 +90,17 @@
 
       let oldNewTodoString = window.localStorage.getItem('newTodo')
       this.newTodo = JSON.parse(oldNewTodoString)
+
+      // 定义好currentUser
+      this.currentUser = this.getCurrentUser()
     },
     methods: {
       toggleClass(item) {
+        // 切换class，标记已完成、未完成
         item.isFinished = !item.isFinished
       },
       createNewList() {
+        // 新建列表项，实现增加功能
         this.items.push({
           label: this.newTodo,
           isFinished: false,
@@ -91,10 +109,13 @@
         this.newTodo = ''
       },
       removeItem(item) {
+        // 删除列表项，实现删除功能
         let index = this.items.indexOf(item)
         this.items.splice(index, 1)
       },
       signUp() {
+        // leancloud 注册
+
         // 新建 AVUser 对象实例
         let user = new AV.User()
         // 设置用户名
@@ -108,13 +129,33 @@
         })
       },
       login() {
-        AV.User.logIn(this.formData.userName, this.formData.password).then(function (loginedUser) {
-          console.log(loginedUser)
+        // leancloud 登录
+
+        AV.User.logIn(this.formData.userName, this.formData.password).then((loginedUser) => {
+          this.currentUser = this.getCurrentUser()
         }, function (error) {
         })
       },
-      getCurrentUser(){
-        
+      logout() {
+        // leancloud 登出
+
+        AV.User.logOut()
+        this.currentUser = null
+        window.location.reload()
+      },
+      getCurrentUser() {
+        // leancloud 获取当前用户
+
+        // 先做判断，当前用户是否已经登录，若已登录，直接进入TODO页面
+        // 否则，一旦刷新，每次都要重新登录
+        // 这个判断主要是为了 created 中的 定义currentUser 服务
+        let current = AV.User.current()
+        if (current) {
+          let {id, createAt, attributes: {username}} = current
+          return {id, createAt, username}
+        } else {
+          return null
+        }
       }
     }
   }
