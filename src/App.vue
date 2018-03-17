@@ -1,6 +1,6 @@
 <template xmlns:v-for="http://www.w3.org/1999/xhtml">
   <div id="app">
-    <h1>{{title}}</h1>
+    <h1>{{title}}<span>{{title2}}</span></h1>
     <section id="logInAndSignUp" v-if="!currentUser">
       <div>
         <label><input type="radio" name="type" value="signUp" v-model="actionType">注册</label>
@@ -54,7 +54,8 @@
   export default {
     data() {
       return {
-        title: 'Welcome,ToDoList',
+        title: 'Welcome,',
+        title2: 'ToDoList',
         items: [],
         newTodo: '',
         checked: false,
@@ -67,37 +68,73 @@
       }
     },
     created: function () {
-      // 将数据储存至leanCloud
-
-      window.onbeforeunload = () => {
-        // onbeforeunload,window api 在窗口关闭时执行
-        let dataString = JSON.stringify(this.items)
-        window.localStorage.setItem('todoList', dataString)
-
-        let AVTodos = AV.Object.extend('todos')
-        let avTodos = new AVTodos
-        avTodos.set('content', dataString)
-        avTodos.save().then(function (todo) {
-          // 保存成功后的代码
-          console.log('success')
-        }, function (error) {
-          console.log('fail')
-        })
-      }
-
-      let oldDataString = window.localStorage.getItem('todoList')
-      this.items = JSON.parse(oldDataString) || []
-
-      let oldNewTodoString = window.localStorage.getItem('newTodo')
-      this.newTodo = JSON.parse(oldNewTodoString)
-
       // 定义好currentUser
       this.currentUser = this.getCurrentUser()
+      this.fetchTodos()
     },
     methods: {
+      fetchTodos() {
+        // 获取 User 的 todos
+
+        // 1.用户刷新页面，但没有退出
+        // 2.用户登出，再登录
+        if (this.currentUser) {
+          let query = new AV.Query('todos')
+          query.find().then((todos) => {
+            console.log(todos)
+
+            let realTodos = todos[0] // todos是一个数组，取第一项，因为我们只更新第一项
+            let id = realTodos.id // 在leancloud，每一个数据都有一个ObjectId
+            this.items = JSON.parse(realTodos.attributes.content) // 把todo的内容替换当前items的内容
+            this.items.id = id
+            console.log(this.items)
+          }, function (error) {
+            console.log(error)
+          })
+        }
+      },
+      updateTodos() {
+        let dataString = JSON.stringify(this.items)
+        // 更新数据，需要知道数据具体的ObjectId
+        let avTodos = AV.Object.createWithoutData('todos', this.items.id)
+        avTodos.set('content', dataString)
+        avTodos.save().then(() => {
+          console.log('更新成功')
+        })
+      },
       toggleClass(item) {
         // 切换class，标记已完成、未完成
         item.isFinished = !item.isFinished
+      },
+      saveTodos() {
+        let dataString = JSON.stringify(this.items)
+        let AVTodos = AV.Object.extend('todos')
+        let avTodos = new AVTodos
+
+        let acl = new AV.ACL()
+        acl.setReadAccess(AV.User.current(), true) // 只有当前用户能读
+        acl.setWriteAccess(AV.User.current(), true) // 只有当前用户能写
+
+        avTodos.set('content', dataString)
+
+        avTodos.setACL(acl) // 设置访问控制
+
+        avTodos.save().then((todo) => {
+          // 保存成功后的代码
+          this.items.id = todo.id // 保存成功后，说明数据库有了数据，一定把id加上，否则不会执行update
+          console.log('save：', todo)
+        }, function (error) {
+          console.log('fail')
+        })
+      },
+      saveOrUpdateTodos() {
+        if (this.items.id) {
+          // 已有数据记录，则更新
+          this.updateTodos()
+        } else {
+          // 没有数据记录，则保存
+          this.saveTodos()
+        }
       },
       createNewList() {
         // 新建列表项，实现增加功能
@@ -107,11 +144,13 @@
           createAt: new Date()
         })
         this.newTodo = ''
+        this.saveOrUpdateTodos()
       },
       removeItem(item) {
         // 删除列表项，实现删除功能
         let index = this.items.indexOf(item)
         this.items.splice(index, 1)
+        this.saveOrUpdateTodos()
       },
       signUp() {
         // leancloud 注册
@@ -130,15 +169,15 @@
       },
       login() {
         // leancloud 登录
-
         AV.User.logIn(this.formData.userName, this.formData.password).then((loginedUser) => {
           this.currentUser = this.getCurrentUser()
+          this.fetchTodos()
         }, function (error) {
+          console.log(error)
         })
       },
       logout() {
         // leancloud 登出
-
         AV.User.logOut()
         this.currentUser = null
         window.location.reload()
@@ -162,15 +201,30 @@
 </script>
 
 <style>
+  * {
+    margin: 0;
+    padding: 0;
+  }
+
+  ul,
+  li {
+    list-style: none;
+  }
+
   #app {
     font-family: 'Avenir', Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-align: center;
     color: #2c3e50;
-    margin-top: 60px;
+    border: 1px solid red;
+    width: 600px;
+    margin: 60px auto;
   }
 
+  #app > h1 > span {
+    color: #E23150;
+  }
   .finished {
     text-decoration: line-through;
   }
