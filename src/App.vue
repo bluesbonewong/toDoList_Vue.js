@@ -4,10 +4,9 @@
 		<section id="logInAndSignUp" v-if="!currentUser">
 			<div class="wrapper">
 				<div class="tab-title">
-					<label :class="{active:isActive}" v-on:click="toggleTabClass"><input type="radio" name="type" value="signUp"
-					                                                                     v-model="actionType">注册</label>
-					<label :class="{active:!isActive}" v-on:click="toggleTabClass"><input type="radio" name="type" value="login"
-					                                                                      v-model="actionType">登录</label>
+					<label class="active"><input type="radio" name="type" value="signUp" v-model="actionType"
+					                             @click="toggleTabClass">注册</label>
+					<label><input type="radio" name="type" value="login" v-model="actionType" @click="toggleTabClass">登录</label>
 				</div>
 				<div class="signUp" v-if="actionType === 'signUp'">
 					<form v-on:submit.prevent=signUp>
@@ -78,10 +77,17 @@
 			this.fetchTodos()
 		},
 		methods: {
-			toggleTabClass() {
-				// 切换tab的class active
-				this.isActive = !(this.isActive)
-				console.log(this.isActive)
+			toggleTabClass(e) {
+				// <label><input>注册</label> 这种形式
+				// 如果在在label上放置click事件，只点击label的话
+				// 触发第一次click事件，然后label由于和input相关联，相当于input也被点击了一次，input导致了事件冒泡
+				// 然后再次触发label上的click事件，所以click事件被执行了两回
+
+				// 通过input的冒泡，去切换tab的class active
+				for (let i = 0; i < e.target.parentElement.parentElement.children.length; i++) {
+					e.target.parentElement.parentElement.children[i].classList.remove('active')
+				}
+				e.target.parentElement.classList.add('active')
 			},
 			toggleClass(item) {
 				// 切换class，标记已完成、未完成
