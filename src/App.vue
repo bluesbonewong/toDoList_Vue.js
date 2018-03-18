@@ -10,35 +10,40 @@
 				</div>
 				<div class="signUp" v-if="actionType === 'signUp'">
 					<form v-on:submit.prevent=signUp>
-						<div class="formRow">用户名<input type="text" v-model="formData.userName"></div>
-						<div class="formRow">密码<input type="password" v-model="formData.password"></div>
+						<div class="formRow"><input type="text" placeholder="用户名" v-model="formData.userName"></div>
+						<div class="formRow"><input type="password" placeholder="密码" v-model="formData.password"></div>
 						<div class="formActions"><input type="submit" value="注册"></div>
 					</form>
 				</div>
 				<div class="login" v-if="actionType === 'login'">
 					<form v-on:submit.prevent=login>
-						<div class="formRow">用户名<input type="text" v-model="formData.userName"></div>
-						<div class="formRow">密码<input type="password" v-model="formData.password"></div>
+						<div class="formRow"><input type="text" placeholder="用户名" v-model="formData.userName"></div>
+						<div class="formRow"><input type="password" placeholder="密码" v-model="formData.password"></div>
 						<div class="formActions"><input type="submit" value="登录"></div>
 					</form>
 				</div>
 			</div>
+			<p class="information">Written & Design By <a href="https://github.com/bluesbonewong/toDoList_Vue.js"
+			                                              target="_blank">bluesboneWong</a></p>
 		</section>
 		<section id="todo" v-if="currentUser">
 			<div>
-				<button @click="logout">登出</button>
+				<button class="logout" @click="logout">登出</button>
 			</div>
 			<div class="newTask">
-				<input type="text" v-model="newTodo" @keyup.enter="createNewList">
+				<input type="text" placeholder="做你爱做的事吧！" v-model="newTodo" @keyup.enter="createNewList">
 			</div>
 			<ul>
 				<li v-for="item in items" :class="{finished:item.isFinished}" v-on:click="toggleClass(item)">
-					{{item.label}}<input type="checkbox" id="checkbox" v-model="item.isFinished">
-					<p v-if="item.isFinished">{{item.createAt}}</p>
-					<p v-else>{{item.createAt}}</p>
+					<p class="liItem">{{item.label}}</p>
+					<div id="checkbox" v-model="item.isFinished">完</div>
+					<p class="date" v-if="item.isFinished">{{item.createAt}}</p>
+					<p class="date" v-else>{{item.createAt}}</p>
 					<button v-on:click="removeItem(item)">X</button>
 				</li>
 			</ul>
+			<p class="information">Written & Design By <a href="https://github.com/bluesbonewong/toDoList_Vue.js"
+			                                              target="_blank">bluesboneWong</a></p>
 		</section>
 
 	</div>
@@ -92,6 +97,7 @@
 			toggleClass(item) {
 				// 切换class，标记已完成、未完成
 				item.isFinished = !item.isFinished
+				this.saveOrUpdateTodos()
 				console.log(1)
 			},
 			fetchTodos() {
@@ -158,7 +164,7 @@
 				this.items.push({
 					label: this.newTodo,
 					isFinished: false,
-					createAt: new Date()
+					createAt: (new Date()).toISOString().toString().substr(0,10) + ' | ' + (new Date()).toString().substr(16,8)
 				})
 				this.newTodo = ''
 				this.saveOrUpdateTodos()
@@ -223,9 +229,26 @@
 		padding: 0;
 	}
 
+	a {
+		text-decoration: none;
+		color: inherit;
+	}
+
 	ul,
 	li {
 		list-style: none;
+	}
+
+	.information {
+		margin-bottom: 18px;
+	}
+
+	.information > a {
+		color: #E23150;
+	}
+
+	.information > a:hover {
+		text-decoration: underline;
 	}
 
 	#app {
@@ -252,11 +275,12 @@
 		/*background: #FAFBFC;*/
 		border-bottom-left-radius: 10px;
 		border-bottom-right-radius: 10px;
+		overflow: hidden;
 	}
 
 	#logInAndSignUp > .wrapper {
 		box-sizing: border-box;
-		width: 100%;
+		width: 70%;
 		margin: 0 auto;
 	}
 
@@ -295,17 +319,177 @@
 		margin-top: 6px;
 	}
 
-	/*#logInAndSignUp > .wrapper > .tab-title > label:first-child {*/
-	/*border-right: 1px solid #dbe2e8;*/
-	/*}*/
+	#logInAndSignUp > .wrapper .formRow > input {
+		margin: 8px;
+		width: 322px;
+		padding: 6px 10px;
+		font-size: 16px;
+		box-sizing: border-box;
+		box-shadow: 0 0.25em 0.5em 0 rgba(46, 61, 73, .12);
+		transition: box-shadow .3s ease, border .3s ease;
+		border: 1px solid #dbe2e8;
+		outline: none;
+	}
+
+	#logInAndSignUp > .wrapper .formRow > input:hover {
+		box-shadow: 0 0.125em 0.5em 0 rgba(46, 61, 73, .06);
+	}
+
+	#logInAndSignUp > .wrapper .formRow > input:focus {
+		border: 1px solid rgba(226, 49, 80, 0.15);
+		box-shadow: 0 0 0.75em 0.25em rgba(226, 49, 80, 0.15);
+	}
+
+	#logInAndSignUp > .wrapper .formActions > input {
+		margin: 8px 0 20px 0;
+		width: 322px;
+		padding: 6px 10px;
+		font-size: 16px;
+		box-sizing: border-box;
+		box-shadow: 0 0.25em 0.5em 0 rgba(46, 61, 73, .12);
+		transition: all .3s ease, border .3s ease;
+		border: 1px solid #dbe2e8;
+		background: #E23150;
+		color: white;
+		outline: none;
+	}
+
+	#logInAndSignUp > .wrapper .formActions > input:hover {
+		box-shadow: 0 0.125em 0.5em 0 rgba(46, 61, 73, .06);
+		background: rgb(255, 55, 89);
+	}
 
 	#logInAndSignUp > .wrapper > div > label > input {
 		display: none;
 	}
 
-	.finished {
-		text-decoration: line-through;
+	/*TODO部分*/
+
+	#todo {
+		overflow: hidden;
 	}
 
+	#todo .logout {
+		margin: 8px 0;
+		width: 322px;
+		padding: 6px 10px;
+		font-size: 16px;
+		box-sizing: border-box;
+		box-shadow: 0 0.25em 0.5em 0 rgba(46, 61, 73, .12);
+		transition: all .3s ease, border .3s ease;
+		border: 1px solid #dbe2e8;
+		background: #E23150;
+		color: white;
+		outline: none;
+	}
 
+	#todo .logout:hover {
+		box-shadow: 0 0.125em 0.5em 0 rgba(46, 61, 73, .06);
+		background: rgb(255, 55, 89);
+	}
+
+	#todo .newTask > input {
+		margin: 8px;
+		margin-bottom: 16px;
+		width: 322px;
+		height: 36px;
+		padding: 6px 10px;
+		font-size: 16px;
+		box-sizing: border-box;
+		box-shadow: 0 0.25em 0.5em 0 rgba(46, 61, 73, .12);
+		transition: box-shadow .3s ease, border .3s ease;
+		outline: none;
+		border: none;
+	}
+
+	#todo .newTask > input:hover {
+		box-shadow: 0 0.125em 0.5em 0 rgba(46, 61, 73, .06);
+	}
+
+	#todo .newTask > input:focus {
+		border: 1px solid rgba(226, 49, 80, 0.15);
+		box-shadow: 0 0 0.75em 0.25em rgba(226, 49, 80, 0.15);
+	}
+
+	/*.finished {*/
+		/*text-decoration: line-through;*/
+	/*}*/
+
+	#todo > ul > li {
+		width: 322px;
+		margin: 10px auto;
+		padding: 10px 24px;
+		box-sizing: border-box;
+		text-align: left;
+		border-radius: 6px;
+		position: relative;
+		background: #f7f7f7;
+	}
+
+	#todo > ul > li:last-child {
+		margin-bottom: 26px;
+	}
+
+	#todo > ul > li > .liItem {
+		font-size: 26px;
+		font-weight: bold;
+	}
+
+	#todo > ul > li > #checkbox {
+		position: absolute;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 30px;
+		height: 30px;
+		border-radius: 10px;
+		right: 50px;
+		background: white;
+		box-shadow: 0 0.25em 0.5em 0 rgba(46, 61, 73, .12);
+		transition: all .3s;
+		cursor: pointer;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		font-weight: bold;
+		color: #8E9799;
+	}
+
+	#todo > ul > li > #checkbox:hover {
+		box-shadow: 0 0.125em 0.5em 0 rgba(46, 61, 73, .06);
+		color: #E23150;
+	}
+
+	#todo > ul > li.finished > #checkbox {
+		color: white;
+		background: #E23150;
+		box-shadow: 0 0.125em 0.5em 0 rgba(46, 61, 73, .06);
+	}
+
+	#todo > ul > li > button {
+		border: none;
+		background: white;
+		position: absolute;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 32px;
+		height: 32px;
+		border-radius: 10px;
+		right: 10px;
+		font-size: 20px;
+		transition: all .3s;
+		box-shadow: 0 0.25em 0.5em 0 rgba(46, 61, 73, .12);
+		cursor: pointer;
+		color: #8E9799;
+		outline: none;
+	}
+
+	#todo > ul > li > button:hover {
+		color: #E23150;
+		box-shadow: 0 0.125em 0.5em 0 rgba(46, 61, 73, .06);
+	}
+
+	#todo > ul > li > .date {
+		color: #8E9799;
+		font-size: 14px;
+	}
 </style>
